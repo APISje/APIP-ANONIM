@@ -1,0 +1,17 @@
+packages:
+  "framer-motion": "For fluid, bouncy animations and page transitions"
+  "canvas-confetti": "For celebration effect on message send"
+  "@types/canvas-confetti": "Types for canvas-confetti"
+  "lucide-react": "For beautiful UI icons"
+  "date-fns": "For human-readable date formatting"
+  "clsx": "Utility for constructing className strings conditionally"
+  "tailwind-merge": "Utility for intelligently merging Tailwind classes"
+
+images:
+  - path: "artifacts/vireon/public/images/logo.png"
+    description: "Futuristic neon text logo that says 'Vireon Project' with a glowing purple and pink gradient, clean modern typography, dark background"
+    aspect_ratio: "16:9"
+
+notes:
+  - The application assumes a sound file named `kirim.mp3` is available at the root (`/kirim.mp3`). For development, the Audio API will attempt to play it; if missing, it will gracefully fail.
+  - The frontend uses the exported API fetchers from `@workspace/api-client-react` inside custom TanStack Query wrappers to strictly control cache invalidation.

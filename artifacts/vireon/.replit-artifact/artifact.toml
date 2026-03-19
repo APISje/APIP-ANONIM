@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Vireon Project"
+version = "1.0.0"
+id = "artifacts/vireon"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 24298
+
+[services.development]
+run = "pnpm --filter @workspace/vireon run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/vireon", "run", "build" ]
+publicDir = "artifacts/vireon/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "24298"
+BASE_PATH = "/"

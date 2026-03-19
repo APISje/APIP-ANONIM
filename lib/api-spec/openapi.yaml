@@ -1,22 +1,26 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Vireon Project API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: messages
+    description: Anonymous message operations
+  - name: announcements
+    description: Announcement operations
+  - name: bugs
+    description: Bug report operations
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +28,207 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /messages:
+    get:
+      operationId: getMessages
+      tags: [messages]
+      summary: Get all messages (dashboard)
+      parameters:
+        - name: password
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of messages
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessagesResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      operationId: sendMessage
+      tags: [messages]
+      summary: Send anonymous message
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/SendMessageRequest"
+      responses:
+        "201":
+          description: Message sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /messages/{id}/accept:
+    patch:
+      operationId: acceptMessage
+      tags: [messages]
+      summary: Accept a message
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: password
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Message accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /messages/{id}/file:
+    get:
+      operationId: downloadFile
+      tags: [messages]
+      summary: Download file from message
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: password
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: File download
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+
+  /guests:
+    get:
+      operationId: getGuests
+      tags: [messages]
+      summary: Get guest list (senders with names)
+      responses:
+        "200":
+          description: Guest list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GuestsResponse"
+
+  /announcements:
+    get:
+      operationId: getAnnouncements
+      tags: [announcements]
+      summary: Get active announcements
+      responses:
+        "200":
+          description: Announcements list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnnouncementsResponse"
+    post:
+      operationId: createAnnouncement
+      tags: [announcements]
+      summary: Create announcement (admin)
+      parameters:
+        - name: password
+          in: query
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAnnouncementRequest"
+      responses:
+        "201":
+          description: Announcement created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnnouncementResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /bugs:
+    post:
+      operationId: reportBug
+      tags: [bugs]
+      summary: Report a bug
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReportBugRequest"
+      responses:
+        "201":
+          description: Bug reported
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BugResponse"
+    get:
+      operationId: getBugs
+      tags: [bugs]
+      summary: Get bug reports (admin)
+      parameters:
+        - name: password
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Bug reports
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BugsResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +239,195 @@ components:
       required:
         - status
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    Message:
+      type: object
+      properties:
+        id:
+          type: integer
+        senderName:
+          type: string
+          nullable: true
+        message:
+          type: string
+        hasFile:
+          type: boolean
+        fileName:
+          type: string
+          nullable: true
+        fileType:
+          type: string
+          nullable: true
+        fileSize:
+          type: integer
+          nullable: true
+        accepted:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - message
+        - hasFile
+        - accepted
+        - createdAt
+
+    MessageResponse:
+      type: object
+      properties:
+        message:
+          $ref: "#/components/schemas/Message"
+      required:
+        - message
+
+    MessagesResponse:
+      type: object
+      properties:
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/Message"
+        total:
+          type: integer
+      required:
+        - messages
+        - total
+
+    SendMessageRequest:
+      type: object
+      properties:
+        senderName:
+          type: string
+        message:
+          type: string
+        file:
+          type: string
+          format: binary
+      required:
+        - message
+
+    Guest:
+      type: object
+      properties:
+        id:
+          type: integer
+        senderName:
+          type: string
+        messageCount:
+          type: integer
+        lastSeen:
+          type: string
+          format: date-time
+      required:
+        - id
+        - senderName
+        - messageCount
+        - lastSeen
+
+    GuestsResponse:
+      type: object
+      properties:
+        guests:
+          type: array
+          items:
+            $ref: "#/components/schemas/Guest"
+      required:
+        - guests
+
+    Announcement:
+      type: object
+      properties:
+        id:
+          type: integer
+        content:
+          type: string
+        active:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - content
+        - active
+        - createdAt
+
+    AnnouncementResponse:
+      type: object
+      properties:
+        announcement:
+          $ref: "#/components/schemas/Announcement"
+      required:
+        - announcement
+
+    AnnouncementsResponse:
+      type: object
+      properties:
+        announcements:
+          type: array
+          items:
+            $ref: "#/components/schemas/Announcement"
+      required:
+        - announcements
+
+    CreateAnnouncementRequest:
+      type: object
+      properties:
+        content:
+          type: string
+      required:
+        - content
+
+    BugReport:
+      type: object
+      properties:
+        id:
+          type: integer
+        description:
+          type: string
+        reporterName:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - description
+        - createdAt
+
+    BugResponse:
+      type: object
+      properties:
+        bug:
+          $ref: "#/components/schemas/BugReport"
+      required:
+        - bug
+
+    BugsResponse:
+      type: object
+      properties:
+        bugs:
+          type: array
+          items:
+            $ref: "#/components/schemas/BugReport"
+      required:
+        - bugs
+
+    ReportBugRequest:
+      type: object
+      properties:
+        description:
+          type: string
+        reporterName:
+          type: string
+      required:
+        - description
